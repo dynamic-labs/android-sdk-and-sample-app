@@ -6,8 +6,8 @@ The Dynamic Android SDK provides Web3 authentication and wallet management for A
 
 ```
 Dynamic Android SDK With Sample App/
-├── dynamic-sdk-android-1.0.0.aar      # Core SDK (required)
-├── solana-web3-1.0.0.aar              # Solana SDK (for SOL/SPL transfers)
+├── dynamic-sdk-android.aar      # Core SDK (required)
+├── solana-web3.aar              # Solana SDK (for SOL/SPL transfers)
 ├── README.md                    # This file
 └── ExampleApp/
     └── DynamicSDKExample/       # Complete sample application
@@ -31,8 +31,8 @@ Dynamic Android SDK With Sample App/
 ### Step 1: Copy AAR Files
 
 Copy the AAR files to your project's `libs/` folder:
-- `dynamic-sdk-android-x.x.x.aar` (required)
-- `solana-web3-x.x.x.aar` (only if you need Solana support)
+- `dynamic-sdk-android.aar` (required)
+- `solana-web3.aar` (only if you need Solana support)
 
 ### Step 2: Configure build.gradle.kts
 
@@ -43,10 +43,10 @@ dependencies {
     // ==========================================
 
     // Core SDK (required)
-    implementation(files("libs/dynamic-sdk-android-1.0.0.aar"))
+    implementation(files("libs/dynamic-sdk-android.aar"))
 
     // Solana SDK (optional - remove if not needed)
-    implementation(files("libs/solana-web3-1.0.0.aar"))
+    implementation(files("libs/solana-web3.aar"))
     implementation("org.sol4k:sol4k:0.6.0")  // Required by Dynamic Solana SDK
 
     // ==========================================
@@ -235,7 +235,7 @@ val signature = sdk.solana.signAndSendTransaction(
 
 If you don't need Solana functionality:
 
-1. Don't copy `solana-web3-x.x.x.aar` to your project
+1. Don't copy `solana-web3.aar` to your project
 2. Remove the Solana AAR and sol4k dependencies from build.gradle.kts
 3. Don't use any Solana-related SDK methods
 

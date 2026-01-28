@@ -5,8 +5,8 @@ plugins {
 }
 
 // AAR file paths (relative to this build.gradle.kts)
-val sdkAarPath = "../../dynamic-sdk-android-1.0.0.aar"
-val solanaAarPath = "../../solana-web3-1.0.0.aar"
+val sdkAarPath = "../../dynamic-sdk-android.aar"
+val solanaAarPath = "../../solana-web3.aar"
 
 android {
     namespace = "com.dynamic.sdk.example"
