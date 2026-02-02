@@ -19,6 +19,9 @@ sealed class Route(val route: String) {
     object SwitchNetwork : Route("switch_network/{address}") {
         fun createRoute(address: String) = "switch_network/$address"
     }
+    object CustomBalance : Route("custom_balance/{address}") {
+        fun createRoute(address: String) = "custom_balance/$address"
+    }
 
     // EVM routes
     object EvmSignTransaction : Route("evm_sign_transaction/{address}") {

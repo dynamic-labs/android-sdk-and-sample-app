@@ -105,6 +105,9 @@ fun AppRootView() {
                     onNavigateToSwitchNetwork = {
                         navController.navigate(Route.SwitchNetwork.createRoute(address))
                     },
+                    onNavigateToCustomBalance = {
+                        navController.navigate(Route.CustomBalance.createRoute(address))
+                    },
                     onNavigateToEvmSignTransaction = {
                         navController.navigate(Route.EvmSignTransaction.createRoute(address))
                     },
@@ -159,6 +162,22 @@ fun AppRootView() {
                     onNavigateBack = { navController.popBackStack() },
                     wallet = w,
                     onDismiss = { navController.popBackStack() }
+                )
+            }
+        }
+
+        // Custom Balance Screen
+        composable(
+            route = Route.CustomBalance.route,
+            arguments = listOf(navArgument("address") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val address = backStackEntry.arguments?.getString("address") ?: return@composable
+            val wallet = remember(address) { findWalletByAddress(address) }
+
+            wallet?.let { w ->
+                CustomBalanceScreen(
+                    onNavigateBack = { navController.popBackStack() },
+                    wallet = w
                 )
             }
         }

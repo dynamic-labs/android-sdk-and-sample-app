@@ -45,6 +45,7 @@ fun WalletDetailsScreen(
     wallet: BaseWallet,
     onNavigateToSignMessage: () -> Unit,
     onNavigateToSwitchNetwork: () -> Unit,
+    onNavigateToCustomBalance: () -> Unit,
     onNavigateToEvmSignTransaction: () -> Unit,
     onNavigateToEvmSendTransaction: () -> Unit,
     onNavigateToEvmSignTypedData: () -> Unit,
@@ -182,6 +183,15 @@ fun WalletDetailsScreen(
                 onClick = { viewModel.setPrimary() },
                 modifier = Modifier.padding(horizontal = 16.dp)
             )
+
+            // Reveal Private Key Button (for embedded wallets)
+            Spacer(modifier = Modifier.height(12.dp))
+            SecondaryButton(
+                icon = Icons.Default.VpnKey,
+                title = "Reveal Private Key",
+                onClick = { viewModel.revealPrivateKey() },
+                modifier = Modifier.padding(horizontal = 16.dp)
+            )
         }
 
         Spacer(modifier = Modifier.height(12.dp))
@@ -191,6 +201,17 @@ fun WalletDetailsScreen(
             icon = Icons.Default.SwapHoriz,
             title = "Switch Network",
             onClick = onNavigateToSwitchNetwork,
+            showChevron = true,
+            modifier = Modifier.padding(horizontal = 16.dp)
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // Custom Token Balances Button
+        SecondaryButton(
+            icon = Icons.Default.BarChart,
+            title = "Custom Token Balances",
+            onClick = onNavigateToCustomBalance,
             showChevron = true,
             modifier = Modifier.padding(horizontal = 16.dp)
         )
@@ -208,7 +229,6 @@ fun WalletDetailsScreen(
             )
         }
 
-        // Solana actions
         if (wallet.chain.uppercase() == "SOL" || wallet.chain.uppercase() == "SOLANA") {
             SolanaActionsView(
                 onSendTransaction = onNavigateToSolanaSendTransaction,
@@ -545,6 +565,17 @@ class WalletDetailsViewModel(private val wallet: BaseWallet) : ViewModel() {
                 }
             } catch (e: Exception) {
                 _errorMessage.value = "Failed to set as primary: ${e.message}"
+            }
+        }
+    }
+
+    fun revealPrivateKey() {
+        viewModelScope.launch {
+            try {
+                sdk.ui.revealEmbeddedWalletPrivateKey()
+                _feedbackLabel.value = "Reveal private key request sent"
+            } catch (e: Exception) {
+                _errorMessage.value = "Failed to reveal private key: ${e.message}"
             }
         }
     }
