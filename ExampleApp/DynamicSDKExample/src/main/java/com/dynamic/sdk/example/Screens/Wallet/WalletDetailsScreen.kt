@@ -26,6 +26,10 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.dynamic.sdk.android.DynamicSDK
 import com.dynamic.sdk.android.Models.BaseWallet
+import com.dynamic.sdk.android.Models.DelegationStatus
+import com.dynamic.sdk.android.Models.DelegationWalletIdentifier
+import com.dynamic.sdk.android.Models.WalletDelegatedStatus
+import com.dynamic.sdk.android.Models.ChainEnum
 import com.dynamic.sdk.example.Components.ActionButton
 import com.dynamic.sdk.example.Components.ErrorMessageView
 import com.dynamic.sdk.example.Components.SecondaryButton
@@ -63,6 +67,8 @@ fun WalletDetailsScreen(
     val isLoadingNetwork by viewModel.isLoadingNetwork.collectAsState()
     val errorMessage by viewModel.errorMessage.collectAsState()
     val feedbackLabel by viewModel.feedbackLabel.collectAsState()
+    val delegationStatus by viewModel.delegationStatus.collectAsState()
+    val isDelegationLoading by viewModel.isDelegationLoading.collectAsState()
 
     val context = LocalContext.current
     var showCopiedSnackbar by remember { mutableStateOf(false) }
@@ -111,6 +117,17 @@ fun WalletDetailsScreen(
             isLoadingBalance = isLoadingBalance,
             isLoadingNetwork = isLoadingNetwork
         )
+
+        // Delegation Section
+        delegationStatus?.let { status ->
+            Spacer(modifier = Modifier.height(16.dp))
+            DelegationSection(
+                status = status,
+                isLoading = isDelegationLoading,
+                onEnable = { viewModel.enableDelegation() },
+                onRevoke = { viewModel.revokeDelegation() }
+            )
+        }
 
         // Feedback message
         feedbackLabel?.let { feedback ->
@@ -499,6 +516,128 @@ fun SolanaActionsView(
     }
 }
 
+@Composable
+fun DelegationSection(
+    status: WalletDelegatedStatus,
+    isLoading: Boolean,
+    onEnable: () -> Unit,
+    onRevoke: () -> Unit
+) {
+    val statusColor = when (status.status) {
+        DelegationStatus.DELEGATED -> MaterialTheme.colorScheme.primary
+        DelegationStatus.DENIED -> MaterialTheme.colorScheme.error
+        DelegationStatus.PENDING -> WarningOrange
+    }
+
+    val statusText = when (status.status) {
+        DelegationStatus.DELEGATED -> "DELEGATED"
+        DelegationStatus.DENIED -> "DENIED"
+        DelegationStatus.PENDING -> "PENDING"
+    }
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        ),
+        border = BorderStroke(1.dp, statusColor.copy(alpha = 0.3f))
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Security,
+                        contentDescription = "Security",
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Delegated Access",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
+                Surface(
+                    color = statusColor.copy(alpha = 0.2f),
+                    shape = RoundedCornerShape(4.dp)
+                ) {
+                    Text(
+                        text = statusText,
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = statusColor,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            if (isLoading) {
+                Box(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                }
+            } else {
+                when (status.status) {
+                    DelegationStatus.DELEGATED -> {
+                        OutlinedButton(
+                            onClick = onRevoke,
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                contentColor = MaterialTheme.colorScheme.error
+                            ),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.error)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.RemoveCircleOutline,
+                                contentDescription = "Revoke",
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Revoke Delegated Access")
+                        }
+                    }
+                    DelegationStatus.PENDING -> {
+                        OutlinedButton(
+                            onClick = onEnable,
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                contentColor = MaterialTheme.colorScheme.primary
+                            )
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.CheckCircleOutline,
+                                contentDescription = "Enable",
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Enable Delegated Access")
+                        }
+                    }
+                    DelegationStatus.DENIED -> {
+                        // No action for denied wallets
+                    }
+                }
+            }
+        }
+    }
+}
+
 class WalletDetailsViewModel(private val wallet: BaseWallet) : ViewModel() {
     private val sdk = DynamicSDK.getInstance()
 
@@ -520,9 +659,31 @@ class WalletDetailsViewModel(private val wallet: BaseWallet) : ViewModel() {
     private val _feedbackLabel = MutableStateFlow<String?>(null)
     val feedbackLabel: StateFlow<String?> = _feedbackLabel.asStateFlow()
 
+    private val _delegationStatus = MutableStateFlow<WalletDelegatedStatus?>(null)
+    val delegationStatus: StateFlow<WalletDelegatedStatus?> = _delegationStatus.asStateFlow()
+
+    private val _isDelegationLoading = MutableStateFlow(false)
+    val isDelegationLoading: StateFlow<Boolean> = _isDelegationLoading.asStateFlow()
+
+    init {
+        // Observe delegation changes
+        viewModelScope.launch {
+            sdk.wallets.delegatedAccessChanges.collect {
+                updateDelegationStatus()
+            }
+        }
+    }
+
+    private fun updateDelegationStatus() {
+        wallet.id?.let { id ->
+            _delegationStatus.value = sdk.wallets.getDelegationStatusForWallet(id)
+        }
+    }
+
     fun refresh() {
         loadBalance()
         loadNetwork()
+        updateDelegationStatus()
     }
 
     private fun loadBalance() {
@@ -577,6 +738,48 @@ class WalletDetailsViewModel(private val wallet: BaseWallet) : ViewModel() {
             } catch (e: Exception) {
                 _errorMessage.value = "Failed to reveal private key: ${e.message}"
             }
+        }
+    }
+
+    fun enableDelegation() {
+        viewModelScope.launch {
+            _isDelegationLoading.value = true
+            try {
+                val chainEnum = if (wallet.chain.uppercase() == "EVM") ChainEnum.EVM else ChainEnum.SOL
+                sdk.wallets.delegateKeyShares(
+                    wallets = listOf(
+                        DelegationWalletIdentifier(
+                            chainName = chainEnum.toString(),
+                            accountAddress = wallet.address
+                        )
+                    )
+                )
+                _feedbackLabel.value = "Delegated access enabled successfully"
+            } catch (e: Exception) {
+                _errorMessage.value = "Failed to enable delegation: ${e.message}"
+            }
+            _isDelegationLoading.value = false
+        }
+    }
+
+    fun revokeDelegation() {
+        viewModelScope.launch {
+            _isDelegationLoading.value = true
+            try {
+                val chainEnum = if (wallet.chain.uppercase() == "EVM") ChainEnum.EVM else ChainEnum.SOL
+                sdk.wallets.revokeDelegation(
+                    wallets = listOf(
+                        DelegationWalletIdentifier(
+                            chainName = chainEnum.toString(),
+                            accountAddress = wallet.address
+                        )
+                    )
+                )
+                _feedbackLabel.value = "Delegated access revoked successfully"
+            } catch (e: Exception) {
+                _errorMessage.value = "Failed to revoke delegation: ${e.message}"
+            }
+            _isDelegationLoading.value = false
         }
     }
 }
