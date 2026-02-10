@@ -8,6 +8,7 @@ sealed class Route(val route: String) {
     object MfaAddDevice : Route("mfa_add_device")
     object MfaRecoveryCodes : Route("mfa_recovery_codes")
     object Passkeys : Route("passkeys")
+    object Delegation : Route("delegation")
 
     // Wallet routes with address parameter
     object WalletDetails : Route("wallet_details/{address}") {

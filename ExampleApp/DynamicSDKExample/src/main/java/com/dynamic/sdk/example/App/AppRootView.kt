@@ -87,6 +87,13 @@ fun AppRootView() {
             )
         }
 
+        // Delegation Screen
+        composable(Route.Delegation.route) {
+            DelegationScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
         // Wallet Details Screen
         composable(
             route = Route.WalletDetails.route,

@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.dynamic.sdk.android.DynamicSDK
 import com.dynamic.sdk.example.Components.*
 
 @Composable
@@ -28,7 +29,6 @@ fun HomeScreen(
     val token by viewModel.token.collectAsState()
     val isCreatingWallets by viewModel.isCreatingWallets.collectAsState()
     val errorMessage by viewModel.errorMessage.collectAsState()
-
     LaunchedEffect(Unit) {
         viewModel.startListening(onNavigateToLogin = onNavigateToLogin)
     }
@@ -58,6 +58,7 @@ fun HomeScreen(
             color = MaterialTheme.colorScheme.onBackground,
             modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)
         )
+
 
         if (isCreatingWallets) {
             Row(
