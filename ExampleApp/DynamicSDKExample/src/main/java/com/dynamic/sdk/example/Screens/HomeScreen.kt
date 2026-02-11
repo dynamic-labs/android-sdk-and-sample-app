@@ -14,6 +14,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.dynamic.sdk.android.DynamicSDK
+import com.dynamic.sdk.android.Models.EmbeddedWalletChain
 import com.dynamic.sdk.example.Components.*
 
 @Composable
@@ -77,12 +78,55 @@ fun HomeScreen(
                 )
             }
         } else if (wallets.isEmpty()) {
-            Text(
-                text = "No wallets connected.",
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)
-            )
+            var selectedChain by remember { mutableStateOf(EmbeddedWalletChain.Evm) }
+            var chainDropdownExpanded by remember { mutableStateOf(false) }
+            Row(
+                modifier = Modifier
+                    .padding(horizontal = 20.dp, vertical = 12.dp)
+                    .fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Box {
+                    FilledTonalButton(
+                        onClick = { chainDropdownExpanded = true }
+                    ) {
+                        Text(selectedChain.value)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Icon(
+                            imageVector = Icons.Default.ArrowDropDown,
+                            contentDescription = null
+                        )
+                    }
+                    DropdownMenu(
+                        expanded = chainDropdownExpanded,
+                        onDismissRequest = { chainDropdownExpanded = false }
+                    ) {
+                        EmbeddedWalletChain.entries.forEach { chain ->
+                            DropdownMenuItem(
+                                text = { Text(chain.value) },
+                                onClick = {
+                                    selectedChain = chain
+                                    chainDropdownExpanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+                Button(
+                    onClick = {
+                        viewModel.createWallet(selectedChain)
+                    }
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Create wallet")
+                }
+            }
         } else {
             wallets.forEach { wallet ->
                 WalletCard(

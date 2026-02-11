@@ -25,6 +25,9 @@ class LoginScreenViewModel : ViewModel() {
     
     private val _externalJwt = MutableStateFlow("")
     val externalJwt: StateFlow<String> = _externalJwt.asStateFlow()
+
+    private val _externalUserId = MutableStateFlow("")
+    val externalUserId: StateFlow<String> = _externalUserId.asStateFlow()
     
     private val _isSendingEmailOTP = MutableStateFlow(false)
     val isSendingEmailOTP: StateFlow<Boolean> = _isSendingEmailOTP.asStateFlow()
@@ -50,6 +53,7 @@ class LoginScreenViewModel : ViewModel() {
     fun updateEmail(value: String) { _email.value = value }
     fun updatePhone(value: String) { _phone.value = value }
     fun updateExternalJwt(value: String) { _externalJwt.value = value }
+    fun updateExternalUserId(value: String) { _externalUserId.value = value }
     
     fun dismissEmailOtpSheet() { _isEmailOtpSheetPresented.value = false }
     fun dismissSmsOtpSheet() { _isSmsOtpSheetPresented.value = false }
@@ -191,15 +195,21 @@ class LoginScreenViewModel : ViewModel() {
     }
     
     fun signInWithExternalJwt() {
-        val trimmed = _externalJwt.value.trim()
-        if (trimmed.isEmpty()) return
-        
+        val jwtTrimmed = _externalJwt.value.trim()
+        val userIdTrimmed = _externalUserId.value.trim()
+        if (jwtTrimmed.isEmpty() || userIdTrimmed.isEmpty()) return
+
         _errorMessage.value = null
         _isSigningInWithExternalJwt.value = true
-        
+
         viewModelScope.launch {
             try {
-                sdk.auth.externalAuth.signInWithExternalJwt(SignInWithExternalJwtParams(trimmed))
+                sdk.auth.externalAuth.signInWithExternalJwt(
+                    SignInWithExternalJwtParams(
+                        externalJwt = jwtTrimmed,
+                        externalUserId = userIdTrimmed
+                    )
+                )
             } catch (e: Exception) {
                 _errorMessage.value = "External JWT sign-in failed: ${e.message}"
             }

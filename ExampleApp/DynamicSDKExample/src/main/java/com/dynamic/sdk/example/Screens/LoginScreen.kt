@@ -23,6 +23,7 @@ fun LoginScreen(
     val email by viewModel.email.collectAsState()
     val phone by viewModel.phone.collectAsState()
     val externalJwt by viewModel.externalJwt.collectAsState()
+    val externalUserId by viewModel.externalUserId.collectAsState()
     val isSendingEmailOTP by viewModel.isSendingEmailOTP.collectAsState()
     val isSendingSmsOTP by viewModel.isSendingSmsOTP.collectAsState()
     val isSigningInWithExternalJwt by viewModel.isSigningInWithExternalJwt.collectAsState()
@@ -194,11 +195,29 @@ fun LoginScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        OutlinedTextField(
+            value = externalUserId,
+            onValueChange = { viewModel.updateExternalUserId(it) },
+            label = { Text("External User ID") },
+            placeholder = { Text("External user ID") },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            shape = RoundedCornerShape(12.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                focusedContainerColor = MaterialTheme.colorScheme.surface,
+                unfocusedContainerColor = MaterialTheme.colorScheme.surface
+            )
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
         PrimaryButton(
             title = "Sign in with External JWT",
             onClick = { viewModel.signInWithExternalJwt() },
             isLoading = isSigningInWithExternalJwt,
-            isDisabled = externalJwt.trim().isEmpty()
+            isDisabled = externalJwt.trim().isEmpty() || externalUserId.trim().isEmpty()
         )
 
         if (errorMessage != null) {

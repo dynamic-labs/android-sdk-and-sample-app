@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.dynamic.sdk.android.DynamicSDK
 import com.dynamic.sdk.android.Models.BaseWallet
+import com.dynamic.sdk.android.Models.EmbeddedWalletChain
 import com.dynamic.sdk.android.Models.UserProfile
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -80,6 +81,22 @@ class HomeScreenViewModel : ViewModel() {
 
     fun getWalletByAddress(address: String): BaseWallet? {
         return _wallets.value.find { it.address == address }
+    }
+
+    fun createWallet(chain: EmbeddedWalletChain) {
+        _errorMessage.value = null
+        _isCreatingWallets.value = true
+        walletCreationTimer?.cancel()
+        walletCreationTimer = null
+        viewModelScope.launch {
+            try {
+                sdk.wallets.embedded.createWallet(chain = chain)
+                // Wallets list will update via userWalletsChanges
+            } catch (e: Exception) {
+                _isCreatingWallets.value = false
+                _errorMessage.value = "Create wallet failed: ${e.message}"
+            }
+        }
     }
 
     private fun checkIfCreatingWallets() {
