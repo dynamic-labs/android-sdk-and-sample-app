@@ -28,9 +28,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.intOrNull
-import kotlinx.serialization.json.contentOrNull
 
 data class NetworkItem(
     val name: String,
@@ -253,18 +250,21 @@ class SwitchNetworkViewModel(private val wallet: BaseWallet) : ViewModel() {
                 if (wallet.chain.uppercase() == "EVM") {
                     // Use networks from SDK instead of hardcoded list
                     networkList.addAll(sdk.networks.evm.map { network ->
-                        val chainIdValue = network.chainId
-                        val chainId = if (chainIdValue is JsonPrimitive) chainIdValue.intOrNull else null
+                        val chainId = when (val v = network.chainId) {
+                            is Int -> v
+                            is Long -> v.toIntOrNull()
+                            is String -> v.toIntOrNull()
+                            else -> null
+                        }
                         NetworkItem(network.name, chainId, null)
                     })
                 } else if (wallet.chain.uppercase() == "SOL") {
                     // Use networks from SDK instead of hardcoded list
                     networkList.addAll(sdk.networks.solana.map { network ->
-                        val networkIdValue = network.networkId
-                        val networkId = if (networkIdValue is JsonPrimitive) {
-                            networkIdValue.contentOrNull ?: networkIdValue.toString()
-                        } else {
-                            networkIdValue.toString()
+                        val networkId = when (val v = network.networkId) {
+                            is String -> v
+                            is Int, is Long -> v.toString()
+                            else -> v.toString()
                         }
                         NetworkItem(network.name, null, networkId)
                     })
